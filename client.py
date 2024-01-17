@@ -1,6 +1,7 @@
 import socket
 import pickle
 from rsa import encrypt
+
 # Configuration du client
 HOST = '127.0.0.1'
 PORT = 12345
@@ -9,25 +10,27 @@ PORT = 12345
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
-# Recption de cle publique
-
+# Réception de la clé publique
 serialized_public_keys = client_socket.recv(4096)
 received_key = pickle.loads(serialized_public_keys)
-
 public_key = received_key['public_key']
-message = input('Quel est le message a envoyer au serveur: ')
 
-# Chiffrement du message
-messageChiffre = encrypt(int(message), public_key)
+# Saisie du message à envoyer au serveur
+user_input = input('Quel est le message à envoyer au serveur: ')
 
-# Envoie du message chiffre
-messageChiffre_to_send = {'messageChiffre': messageChiffre}
-serialized_messageChiffre = pickle.dumps(messageChiffre_to_send)
-client_socket.sendall(serialized_messageChiffre)
+# Vérifier si l'entrée de l'utilisateur est un nombre ou une chaîne de caractères
+if user_input.isdigit():
+    # Si c'est un nombre, chiffrez-le directement
+    message_chiffre = encrypt(int(user_input), public_key)
+else:
+    # Si c'est une chaîne de caractères, convertissez chaque caractère en sa représentation numérique
+    message_numerical = [ord(char) for char in user_input]
+    message_chiffre = [encrypt(char, public_key) for char in message_numerical]
 
-# Envoi de données au serveur
-# message = "Salut serveur, c'est le client !"
-# client_socket.sendall(message.encode())
+# Envoi du message chiffré
+message_chiffre_to_send = {'message_chiffre': message_chiffre}
+serialized_message_chiffre = pickle.dumps(message_chiffre_to_send)
+client_socket.sendall(serialized_message_chiffre)
 
 # Fermeture du socket client
 client_socket.close()
